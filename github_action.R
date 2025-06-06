@@ -5,174 +5,71 @@ lapply(
     quarto::quarto_render(file, output_format = "all")
   }
 )
+
 # Move files to docs/
 # Parameters
 destination <- "docs"
-# Run
-processed <- ""
-if (!dir.exists(destination)) {
-  dir.create(destination)
-}
-htmlFiles <- list.files(pattern = "*.html")
-if (length(htmlFiles) > 0) {
-  processed <- c(processed, htmlFiles)
-  file.rename(
-    from = htmlFiles,
-    to = paste(destination, "/", htmlFiles, sep = "")
-  )
-}
-cssFiles <- list.files(pattern = "*.css")
-if (length(cssFiles) > 0) {
-  processed <- c(processed, cssFiles)
-  file.copy(
-    from = cssFiles,
-    to = paste(destination, "/", cssFiles, sep = ""),
-    overwrite = TRUE
-  )
-}
-html_filesDir <- list.files(pattern = "*_files")
-if (length(html_filesDir) > 0) {
-  processed <- c(processed, html_filesDir)
-  vapply(
-    paste(destination, "/", html_filesDir, sep = ""),
-    FUN = dir.create,
-    showWarnings = FALSE,
-    FUN.VALUE = TRUE
-  )
-  # Rmd specific
-  vapply(
-    paste(destination, "/", html_filesDir, "/figure-html", sep = ""),
-    FUN = dir.create,
-    showWarnings = FALSE,
-    FUN.VALUE = TRUE
-  )
-  html_files <- list.files(
-    path = paste(html_filesDir, "/figure-html/", sep = ""),
-    full.names = TRUE,
-    recursive = TRUE
-  )
-  # Quarto specific
-  vapply(
-    paste(destination, "/", html_filesDir, "/libs", sep = ""),
-    FUN = dir.create,
-    showWarnings = FALSE,
-    FUN.VALUE = TRUE
-  )
-  html_files <- list.files(
-    path = paste(html_filesDir, "/libs/", sep = ""),
-    full.names = TRUE,
-    recursive = TRUE
-  )
-  if (length(html_files) > 0) {
-    file.copy(
-      from = html_files,
-      to = paste(destination, "/", html_files, sep = ""),
-      overwrite = TRUE
-    )
-  }
-}
-# Rmd specific
-libsDirs <- list.dirs(path = "libs", full.names = TRUE, recursive = TRUE)
-if (length(libsDirs) > 0) {
-  processed <- c(processed, libsDirs)
-  vapply(
-    paste(destination, "/", libsDirs, sep = ""),
-    FUN = dir.create,
-    showWarnings = FALSE,
-    FUN.VALUE = TRUE
-  )
-  libsFiles <- list.files("libs", full.names = TRUE, recursive = TRUE)
-  file.copy(
-    from = libsFiles,
-    to = paste(destination, "/", libsFiles, sep = ""),
-    overwrite = TRUE
-  )
-}
-# Quarto specific
-cssDirs <- list.dirs(path = "css", full.names = TRUE, recursive = TRUE)
-if (length(cssDirs) > 0) {
-  processed <- c(processed, cssDirs)
-  vapply(
-    paste(destination, "/", cssDirs, sep = ""),
-    FUN = dir.create,
-    showWarnings = FALSE,
-    FUN.VALUE = TRUE
-  )
-  cssFiles <- list.files("css", full.names = TRUE, recursive = TRUE)
-  file.copy(
-    from = cssFiles,
-    to = paste(destination, "/", cssFiles, sep = ""),
-    overwrite = TRUE
-  )
-}
-# Quarto specific
-jsDirs <- list.dirs(path = "js", full.names = TRUE, recursive = TRUE)
-if (length(jsDirs) > 0) {
-  processed <- c(processed, jsDirs)
-  vapply(
-    paste(destination, "/", jsDirs, sep = ""),
-    FUN = dir.create,
-    showWarnings = FALSE,
-    FUN.VALUE = TRUE
-  )
-  jsFiles <- list.files("js", full.names = TRUE, recursive = TRUE)
-  file.copy(
-    from = jsFiles,
-    to = paste(destination, "/", jsFiles, sep = ""),
-    overwrite = TRUE
-  )
-}
-imagesDirs <- list.dirs(path = "images", full.names = TRUE, recursive = TRUE)
-if (length(imagesDirs) > 0) {
-  processed <- c(processed, imagesDirs)
-  vapply(
-    paste(destination, "/", imagesDirs, sep = ""),
-    FUN = dir.create,
-    showWarnings = FALSE,
-    FUN.VALUE = TRUE
-  )
-  imagesFiles <- list.files("images", full.names = TRUE, recursive = TRUE)
-  file.copy(
-    from = imagesFiles,
-    to = paste(destination, "/", imagesFiles, sep = ""),
-    overwrite = TRUE
-  )
-}
 # Rmd and qmd files
-mdFiles <- c(
+files_source <- c(
   list.files(pattern = "*.Rmd"),
   list.files(pattern = "*.qmd")
 )
-pdfFiles <- gsub(".[qR]md", ".pdf", mdFiles)
-if (length(pdfFiles) > 0) {
-  processed <- c(processed, pdfFiles)
-  suppressWarnings(
-    file.rename(
-      from = pdfFiles,
-      to = paste(destination, "/", pdfFiles, sep = "")
-    )
+processed <- NULL
+# Create the destination folder (typically "docs/")
+if (!dir.exists(destination)) {
+  dir.create(destination)
+}
+# Move output files to clean up the working directory
+files_to_move <- c(
+  gsub(".[qR]md", ".html", files_source),
+  gsub(".[qR]md", ".pdf", files_source),
+  gsub(".[qR]md", ".docx", files_source),
+  gsub(".[qR]md", ".pptx", files_source)
+)
+files_to_move <- files_to_move[file.exists(files_to_move)]
+if (length(files_to_move) > 0) {
+  processed <- c(processed, files_to_move)
+  file.rename(
+    from = files_to_move,
+    to = paste(destination, "/", files_to_move, sep = "")
   )
 }
-PPTxFiles <- gsub(".[qR]md", ".pptx", mdFiles)
-if (length(PPTxFiles) > 0) {
-  processed <- c(processed, PPTxFiles)
-  suppressWarnings(
-    file.rename(
-      from = PPTxFiles,
-      to = paste(destination, "/", PPTxFiles, sep = "")
-    )
+# Copy other necessary files
+files_to_copy <- list.files(
+  pattern = "*.css"
+)
+if (length(files_to_copy) > 0) {
+  processed <- c(processed, files_to_copy)
+  file.copy(
+    from = files_to_copy,
+    to = paste(destination, "/", files_to_copy, sep = ""),
+    overwrite = TRUE
   )
 }
-docxFiles <- gsub(".[qR]md", ".docx", mdFiles)
-if (length(docxFiles) > 0) {
-  processed <- c(processed, PPTxFiles)
-  suppressWarnings(
-    file.rename(
-      from = docxFiles,
-      to = paste(destination, "/", docxFiles, sep = "")
-    )
+# Copy necessary folders
+dirs_to_copy <- c(
+  # HTML files
+  list.files(pattern = "*_files"),
+  # images
+  list.files(pattern = "images"),
+  # R Markdown : libraries
+  list.files(pattern = "libs"),
+  # Quarto : javascript
+  list.files(pattern = "js"),
+  # Quarto : css
+  list.files(pattern = "css")
+)
+if (length(dirs_to_copy) > 0) {
+  processed <- c(processed, dirs_to_copy)
+  vapply(
+    dirs_to_copy,
+    FUN = file.copy,
+    to = destination,
+    recursive = TRUE,
+    FUN.VALUE = TRUE
   )
 }
+# Copy README
 file.copy(from = "README.md", to = "docs/README.md", overwrite = TRUE)
 processed <- c(processed, "README.md")
 cat("Output files moved to", destination)
