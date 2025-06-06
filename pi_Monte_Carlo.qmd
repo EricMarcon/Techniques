@@ -1,5 +1,5 @@
 ---
-title: "Estimation de $\pi$ par Monte Carlo"
+title: "Estimation de $\\pi$ par Monte Carlo"
 lang: fr-FR
 # Code options 
 # https://quarto.org/docs/computations/execution-options.html#output-options
@@ -7,7 +7,7 @@ execute:
   # show code chunk output
   include: true
   # Show the code in the output
-  echo: false
+  echo: true
   # Show warnings
   warning: false
   # Cache code results
