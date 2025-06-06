@@ -1,0 +1,90 @@
+---
+title: "Modèle mixte"
+format: 
+  html:
+    toc: true
+    filters: ["fr-nbsp.lua"]
+editor: visual
+lang: fr-FR
+---
+
+# Motivation
+
+Estimation d'un modèle mixte simple.
+
+# Données
+
+Un modèle linéaire avec effets aléatoires est simulé:
+$$y_{i[j]} = \alpha_j + \beta_j x_{i[j]} + \epsilon_{i[j]}$$
+
+Les individus, indicés par $i$ appartiennent à des groupes, indicés par $j$.
+
+```{r}
+# Paramètres
+n_groupes <- 5
+# Effectif moyen par groupe
+n_individus_par_groupe <- 20
+#  Effectif réel par groupe
+n_individus <- rpois(n_groupes, lambda = n_individus_par_groupe)
+# Paramètres
+sigma <- 1
+```
+
+Les données sont simulées par une fonction.
+
+```{r}
+library("tidyverse")
+sim_data <- function(n_individus, n_groupes, alpha_j, beta_j) {
+  n <- sum(n_individus)
+  X <- runif(n, 0, 10)
+  Y <- rep(alpha_j, n_individus) + rep(beta_j, n_individus) * X + rnorm(n, sd = sigma)
+  seq_len(n_groupes) %>% 
+    rep(n_individus) %>% 
+    as.factor() -> groupe
+  return(tibble(X, Y, groupe))
+}
+```
+
+
+# Modèle linéaire
+
+Les individus sont tous indépendants dans cette première version du modèle: tous les effets sont fixes.
+
+```{r}
+alpha_j <- rep(5, n_groupes)
+beta_j <- rep(2, n_groupes)
+donnees <- sim_data(n_individus, n_groupes, alpha_j, beta_j)
+donnees %>% 
+  ggplot(aes(x = X, y = Y)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+L'estimation utilise la fonction `lm()` du package `stats`.
+
+```{r}
+modele_lm <- lm(Y ~ X, data = donnees)
+summary(modele_lm)
+```
+
+# Effets aléatoires
+
+Les individus appartiennent à des groupes pour lesquels à la fois l'ordonnée à l'origine et la pente du modèle sont des effets aléatoires, distribués normalement autour des valeurs du modèle précédent.
+
+```{r}
+alpha_j <- rnorm(n_groupes, mean = 5, sd = 5)
+beta_j <- rnorm(n_groupes, mean = 2, sd = 5)
+donnees <- sim_data(n_individus, n_groupes, alpha_j, beta_j)
+donnees %>% 
+  ggplot(aes(x = X, y = Y, color = groupe)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+L'estimation est faite avec le package lme4.
+
+```{r}
+library("lme4")
+modele <- lmer(Y ~ (1|groupe) + (X||groupe), data = donnees)
+summary(modele)
+```
