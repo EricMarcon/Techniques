@@ -88,6 +88,40 @@ if (length(libsDirs) > 0) {
     overwrite = TRUE
   )
 }
+# Quarto specific
+cssDirs <- list.dirs(path = "css", full.names = TRUE, recursive = TRUE)
+if (length(cssDirs) > 0) {
+  processed <- c(processed, cssDirs)
+  vapply(
+    paste(destination, "/", cssDirs, sep = ""),
+    FUN = dir.create,
+    showWarnings = FALSE,
+    FUN.VALUE = TRUE
+  )
+  cssFiles <- list.files("css", full.names = TRUE, recursive = TRUE)
+  file.copy(
+    from = cssFiles,
+    to = paste(destination, "/", cssFiles, sep = ""),
+    overwrite = TRUE
+  )
+}
+# Quarto specific
+jsDirs <- list.dirs(path = "js", full.names = TRUE, recursive = TRUE)
+if (length(jsDirs) > 0) {
+  processed <- c(processed, jsDirs)
+  vapply(
+    paste(destination, "/", jsDirs, sep = ""),
+    FUN = dir.create,
+    showWarnings = FALSE,
+    FUN.VALUE = TRUE
+  )
+  jsFiles <- list.files("js", full.names = TRUE, recursive = TRUE)
+  file.copy(
+    from = jsFiles,
+    to = paste(destination, "/", jsFiles, sep = ""),
+    overwrite = TRUE
+  )
+}
 imagesDirs <- list.dirs(path = "images", full.names = TRUE, recursive = TRUE)
 if (length(imagesDirs) > 0) {
   processed <- c(processed, imagesDirs)
