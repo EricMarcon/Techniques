@@ -143,7 +143,7 @@ mdFiles <- c(
   list.files(pattern = "*.Rmd"),
   list.files(pattern = "*.qmd")
 )
-pdfFiles <- gsub(".Rmd", ".pdf", mdFiles)
+pdfFiles <- gsub(".[qR]md", ".pdf", mdFiles)
 if (length(pdfFiles) > 0) {
   processed <- c(processed, pdfFiles)
   suppressWarnings(
@@ -153,7 +153,7 @@ if (length(pdfFiles) > 0) {
     )
   )
 }
-PPTxFiles <- gsub(".Rmd", ".pptx", mdFiles)
+PPTxFiles <- gsub(".[qR]md", ".pptx", mdFiles)
 if (length(PPTxFiles) > 0) {
   processed <- c(processed, PPTxFiles)
   suppressWarnings(
@@ -163,7 +163,7 @@ if (length(PPTxFiles) > 0) {
     )
   )
 }
-docxFiles <- gsub(".Rmd", ".docx", mdFiles)
+docxFiles <- gsub(".[qR]md", ".docx", mdFiles)
 if (length(docxFiles) > 0) {
   processed <- c(processed, PPTxFiles)
   suppressWarnings(
