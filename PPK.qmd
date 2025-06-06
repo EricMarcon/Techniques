@@ -1,11 +1,24 @@
 ---
 title: "Simulation d'un jeu de points agrégé et calcul de K()"
+lang: fr-FR
+# Code options 
+# https://quarto.org/docs/computations/execution-options.html#output-options
+execute:
+  # show code chunk output
+  include: true
+  # Show the code in the output
+  echo: true
+  # Show warnings
+  warning: false
+  # Cache code results
+  cache: false
+  # option messages is in the Option chunk for R
 format: 
   html:
     toc: true
-    code-fold: show
+    filters: ["fr-nbsp.lua"]
+  pdf: default
 editor: visual
-lang: fr-FR
 ---
 
 ```{r}
@@ -23,7 +36,7 @@ install_packages <- function(packages) {
 }
 
 # Basic packages
-install_packages(c("bookdown", "formatR", "kableExtra", "ragg"))
+install_packages(c("bookdown", "formatR", "kableExtra"))
 
 # Chunk font size hook: allows size='small' or any valid Latex font size in chunk options
 def.chunk.hook  <- knitr::knit_hooks$get("chunk")
@@ -46,21 +59,20 @@ packages <- c("tidyverse", "spatstat", "dbmss")
 # Install them
 install_packages(packages)
 
-# knitr options
+# knitr options (https://yihui.org/knitr/options/)
 knitr::opts_chunk$set(
-  cache =   FALSE,    # Cache chunk results
-  include = TRUE,     # Show/Hide chunks
-  echo =    TRUE,     # Show/Hide code
-  warning = FALSE,    # Show/Hide warnings
-  message = FALSE,    # Show/Hide messages
-  # Figure alignment and size
-  fig.align = 'center', out.width = '80%',
-  # Graphic devices (ragg_png is better than standard png)
-  dev = c("ragg_png", "pdf"),
-  # Code chunk format
-  tidy = FALSE, tidy.opts = list(blank = FALSE, width.cutoff = 50),
-  size = "scriptsize", knitr.graphics.auto_pdf = TRUE
-  )
+  # Messages from packages
+  message = FALSE,
+  # Code chunk automatic format if tidy is TRUE
+  tidy = TRUE, 
+  # Tidy code options: remove blank lines and cut lines after 50 characters
+  tidy.opts = list(blank = FALSE, width.cutoff = 50),
+  # Font size in PDF output
+  size = "scriptsize", 
+  # Select PDF figures in PDF output if PDF file exists beside PNG file
+  knitr.graphics.auto_pdf = TRUE
+)
+# Text width of R functions output
 options(width = 50)
 
 # ggplot style
@@ -154,7 +166,7 @@ plot(X_Poisson_9ha)
 Pour le créer, il faut un tableau dont les colonnes s'appellent x, y, PointType et PointWeight.
 
 ```{r}
-xy_type_poids <- tibble (
+xy_type_poids <- tibble(
   xy,
   PointType = sample(LETTERS, size = n, replace = TRUE),
   PointWeight = runif(n, min = 10, max = 50)
@@ -226,7 +238,10 @@ sapply(
   seq_len(X_Thomas$n),
   FUN = \(i) {
     # Pour le point i, cercle de 10m de rayon
-    neighborhood <- disc(radius = 15, centre = c(X_Thomas$x[i], X_Thomas$y[i]))
+    neighborhood <- disc(
+      radius = 15, 
+      centre = c(X_Thomas$x[i], X_Thomas$y[i])
+    )
     # Sélection du jeu de points
     X_i <- X_Thomas[neighborhood]
     # Nombre de voisins
