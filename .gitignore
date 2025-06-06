@@ -14,6 +14,16 @@
 /*.log
 /*.pdf
 /*.tex
+css/
+js/
 
 # Cache
 /*_files/
+
+# Working files ---
+# animation
+Rplot*.png
+animate.sty
+animation.gif
+animfp.sty
+
