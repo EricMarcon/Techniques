@@ -8,3 +8,4 @@ Notes sur des techniques diverses, pour mémoire.
 - [Estimation de $\pi$ par Monte Carlo](pi_Monte_Carlo.html)
 - [Simulation d'un jeu de points agrégé et calcul de K()](PPK.html)
 - [Modèle mixte](modele_mixte.html)
+- [Régression de modèle II](regression_modele_II.html)

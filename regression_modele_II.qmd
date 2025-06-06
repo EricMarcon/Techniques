@@ -1,0 +1,207 @@
+---
+title: "Régression de modèle II"
+lang: fr-FR
+# Code options 
+# https://quarto.org/docs/computations/execution-options.html#output-options
+execute:
+  # show code chunk output
+  include: true
+  # Show the code in the output
+  echo: true
+  # Show warnings
+  warning: false
+  # Cache code results
+  cache: false
+  # option messages is in the Option chunk for R
+format: 
+  html:
+    toc: true
+    filters: ["fr-nbsp.lua"]
+  pdf: default
+editor: visual
+---
+
+```{r}
+#| label: DoNotModify
+#| include: false
+### Utilities for R. 
+# Do not modify unless you don't use R: then, delete this chunk.
+# Installation of R packages if necessary
+install_packages <- function(packages) {
+  invisible(
+    sapply(
+      packages, 
+      FUN = function(package) {
+        if (!package %in% installed.packages()[, 1]) {
+          install.packages(package, repos = "https://cran.rstudio.com/")
+        }
+      }
+    )
+  )
+}
+
+# Basic packages
+install_packages(c("knitR", "formatR", "kableExtra"))
+
+# Chunk font size hook: allows size='small' or any valid Latex font size in chunk options
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(
+  chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(
+      options$size == "normalsize", 
+      yes = x,
+      no = paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize")
+    )
+  }
+)
+```
+
+```{r}
+#| label: Options
+#| include: false
+### Customized R options for this document
+# Delete this chunk if you don't use R
+
+# Add necessary packages here
+packages <- c("tidyverse", "lmodel2")
+# Install them
+install_packages(packages)
+
+# knitr options (https://yihui.org/knitr/options/)
+knitr::opts_chunk$set(
+  # Messages from packages
+  message = FALSE,
+  # Code chunk automatic format if tidy is TRUE
+  tidy = TRUE, 
+  # Tidy code options: remove blank lines and cut lines after 50 characters
+  tidy.opts = list(blank = FALSE, width.cutoff = 50),
+  # Font size in PDF output
+  size = "scriptsize", 
+  # Select PDF figures in PDF output if PDF file exists beside PNG file
+  knitr.graphics.auto_pdf = TRUE
+)
+# Text width of R functions output
+options(width = 50)
+
+# ggplot style
+library("tidyverse")
+theme_set(theme_bw())
+theme_update(
+  panel.background = element_rect(fill = "transparent", colour = NA),
+  plot.background = element_rect(fill = "transparent", colour = NA)
+)
+knitr::opts_chunk$set(dev.args = list(bg = "transparent"))
+
+# Random seed
+set.seed(973)
+```
+## Théorie
+
+La régression de modèle II (package **lmodel2**) s'applique aux données pour lesquelles X et Y sont entâchés d'erreurs.
+L'application typique est la comparaison de mesures effectuées par deux instruments différents.
+
+## Exemple
+
+Soient 20 mesures dont les vraies valeurs sont 1:20.
+Deux instruments sont utilisés, chacun comporte une erreur normale.
+On compare les deux jeux de mesures pour valider la possibilité d'utiliser indifféremment l'un ou l'autre des instruments.
+Les seules données disponibles sont les mesures : les valeurs exactes ne sont pas connues des expérimentateurs.
+
+```{r}
+library("tidyverse")
+mesures_n <- 20
+mesures_exactes <- 1:mesures_n
+erreur_1 <- 1
+erreur_2 <- 2
+# Création des données
+mesures <- tibble(
+  mesures_1 = mesures_exactes + rnorm(mesures_n, sd = erreur_1),
+  mesures_2 = mesures_exactes + rnorm(mesures_n, sd = erreur_2)  
+)
+# Figure
+mesures %>% 
+  ggplot(aes(x = mesures_1, y = mesures_2)) +
+  geom_point() +
+  geom_abline(slope = 1, intercept = 0)
+```
+
+# Régression
+
+La régression utilise la fonction `lmodel2::lmodel2()`.
+
+```{r}
+library("lmodel2")
+mesures %>% 
+  lmodel2(mesures_2 ~ mesures_1, data = .) -> mesures_lm2
+# Résultats
+mesures_lm2
+```
+
+La méthode à utiliser ici est celle de l'axe majeur (MA : voir la vignette du package (section I) pour le choix de la bonne méthode).
+
+L'ordonnée à l'origine n'est pas différente de 0 et la pente n'est pas différente de 1: les deux instruments fournissent la même mesure.
+
+Une figure peut être produite:
+
+```{r}
+plot(mesures_lm2)
+```
+
+Avec ggplot:
+
+```{r}
+lmodel2_lines <- function(model, method = "MA") {
+  # Code adapté de lmodel2::plot.lmodel2()
+  if ((method != "OLS") && (model$rsquare <= model$epsilon)) {
+    # Pas de correlation entre x et y
+    stop("R-square = 0: model and C.I. not drawn for MA, SMA or RMA")
+  }
+  # Centre de gravité du nuage de points
+  centroid <- colMeans(as.data.frame(model[c("x", "y")]))
+  # Modèle utilisé
+  row <- which(model$regression.results == method)
+  # Pente estimée et intervalle de confiance
+  slope <- c(
+    model$regression.results[row, "Slope"],
+    model$confidence.intervals[row, "2.5%-Slope"],
+    model$confidence.intervals[row, "97.5%-Slope"]
+  )
+  # Intercept correspondant (pour l'IC)
+  intercept <- centroid[2] - slope * centroid[1]
+  # Intercept estimé
+  intercept[1] <- model$regression.results[row, "Intercept"]
+  
+  return(
+    tibble(line = c("Estimate", "2.5%-Slope", "97.5%-Slope"), slope, intercept)
+  )
+}
+
+ggplot() +
+geom_point(data = mesures, mapping = aes(x = mesures_1, y = mesures_2)) +
+geom_abline(
+  data = lmodel2_lines(mesures_lm2), 
+  mapping = aes(slope  = slope , intercept = intercept, color = line)
+)
+```
+
+La proportion de la variance estimée est :
+
+```{r}
+mesures_lm2$rsquare
+```
+
+## Régression classique
+
+Le modèle classique sous-estime la pente de la relation (pente en gras et intervalle de confiance grisé).
+
+```{r}
+mesures %>% 
+  ggplot(aes(x = mesures_1, y = mesures_2)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  geom_abline(
+    data = lmodel2_lines(mesures_lm2), 
+    mapping = aes(slope  = slope , intercept = intercept, color = line)
+  )
+```
